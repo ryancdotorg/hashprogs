@@ -106,6 +106,28 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
+  { // remove aliases from the digest list
+    struct digest_list *prev = NULL, *curr = md, *next;
+    while (curr != NULL) {
+      next = curr->next;
+      if (curr->alias) {
+        if (prev == NULL) {
+          // update start of list
+          md = next;
+        } else {
+          // unlink current entry from list
+          prev->next = next;
+        }
+        // free discarded entry
+        free(curr);
+      } else {
+        prev = curr;
+      }
+      // next entry
+      curr = next;
+    }
+  }
+
   if (argc == 1) {
     // read stdin if no arguments
     ret = allsum(stdin, "-", md, buf, BUF_SZ) || ret;
