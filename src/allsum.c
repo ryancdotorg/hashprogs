@@ -18,6 +18,7 @@
 
 #include "digestlist.h"
 #include "bnprintf.h"
+#include "hexlify.h"
 
 #define BUF_SZ 65536
 
@@ -28,15 +29,15 @@ static inline size_t max(size_t a, size_t b) {
 static int allsum(FILE *f, const char *name, struct digest_list *md, unsigned char *buf, size_t sz) {
   struct digest_list *md_first = md;
   unsigned char hash[EVP_MAX_MD_SIZE];
-  char fmt[256];
-  char hex[EVP_MAX_MD_SIZE*2+1];
+  char fmt[64];
+  char hex[EVP_MAX_MD_SIZE*2+2];
   size_t w = 0;
   size_t n;
 
   // initialize all digests
   while (md != NULL) {
     w = max(w, strlen(md->name));
-    if ((md->ctx = EVP_MD_CTX_new()) == NULL) {
+    if (md->ctx == NULL && (md->ctx = EVP_MD_CTX_new()) == NULL) {
       fprintf(stderr, "EVP_MD_CTX_new() failed!\n");
       return -1;
     }
@@ -64,22 +65,17 @@ static int allsum(FILE *f, const char *name, struct digest_list *md, unsigned ch
   md = md_first;
   while (md != NULL) {
     EVP_DigestFinal(md->ctx, hash, NULL);
-
     // format hash as hex
-    char *d = hex;
-    size_t space = sizeof(hex);
-    for (size_t i = 0; i < md->hashlen; ++i) {
-      bnprintf(&d, &space, "%02x", hash[i]);
-    }
+    hexline(hex, sizeof(hex), hash, md->hashlen);
 
     // create padded format string
-    size_t x = 0;
-    d = fmt; space = sizeof(fmt);
+    char *d = fmt;
+    size_t x = 0, space = sizeof(fmt);
     x += bnchr(&d, &space, '(');
     x += bnstrcpy(&d, &space, md->name);
     x += bnchr(&d, &space, ')');
     while (x < w + 4) x += bnchr(&d, &space, ' ');
-    bnmemcpy(&d, &space, "%s  %s\n", 8);
+    bnmemcpy(&d, &space, "%s  %s", 8);
 
     // print file hash
     printf(fmt, name, hex);

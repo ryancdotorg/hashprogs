@@ -12,7 +12,7 @@ COMPILE = $(CC) $(CFLAGS)
 
 all: $(BINARIES)
 
-bin/allsum: obj/allsum.o obj/bnprintf.o obj/digestlist.o
+bin/allsum: obj/allsum.o obj/bnprintf.o obj/digestlist.o obj/hexlify.o
 	@mkdir -p $(@D)
 	$(COMPILE) $^ -lcrypto -o $@
 
@@ -20,7 +20,7 @@ bin/dgstmv: obj/dgstmv.o obj/bnprintf.o obj/digestlist.o
 	@mkdir -p $(@D)
 	$(COMPILE) $^ -lcrypto -o $@
 
-bin/hashln: obj/hashln.o obj/hexlify.o obj/digestlist.o
+bin/hashln: obj/hashln.o obj/digestlist.o obj/hexlify.o
 	@mkdir -p $(@D)
 	$(COMPILE) $^ -lcrypto -o $@
 

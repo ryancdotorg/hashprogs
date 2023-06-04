@@ -115,3 +115,24 @@ struct digest_list * get_digest_list() {
 
   return first;
 }
+
+struct digest_list * tail_digest_list(struct digest_list *entry) {
+  while (entry != NULL && entry->next != NULL) entry = entry->next;
+  return entry;
+}
+
+int append_digest_list(struct digest_list *head, struct digest_list *tail) {
+  if ((head = tail_digest_list(head)) == NULL) return -1;
+  head->next = tail;
+  return 0;
+}
+
+struct digest_list * extend_digest_list(struct digest_list *list) {
+  struct digest_list *entry;
+  if ((entry = new_digest_list()) == NULL) return NULL;
+  if (append_digest_list(list, entry) != 0) {
+    free_digest_list(entry);
+    return NULL;
+  }
+  return entry;
+}
