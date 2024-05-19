@@ -5,7 +5,7 @@ the hopes that they may be useful.
 
 `allsum` - You know about `md5sum`, `sha1sum`, `sha256sum`, `b2sum`, etc,
 right? This is similar, but it runs all the hashes available via OpenSSL’s
-EVP digest API.
+EVP digest API while only reading each file once.
 
 Usage: `allsum [FILES]`, `allsum < FILE`, or `COMMAND | allsum`
 
