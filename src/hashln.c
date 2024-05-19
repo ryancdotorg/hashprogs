@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: CC0-1.1 OR 0BSD
-// Copyright (C) 2022 Ryan Castellucci
+// Copyright (C) 2024 Ryan Castellucci
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -38,10 +38,10 @@ int main(int argc, char **argv) {
 
   unsigned int hashlen = EVP_MD_size(md);
 
-  EVP_DigestInit(ctx, md);
   EVP_MD_CTX_set_flags(ctx, EVP_MD_CTX_FLAG_ONESHOT);
 
   if (argc == 3) {
+    EVP_DigestInit(ctx, md);
     EVP_DigestUpdate(ctx, argv[2], strlen(argv[2]));
     EVP_DigestFinal(ctx, hash, NULL);
     if ((r = hexline(hexed, sizeof(hexed), hash, hashlen)) < -1) return -1;
@@ -49,15 +49,14 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  //char buf[1<<17];
-  //char *b = buf;
-  //size_t n = 0;
   while ((line_read = getline(&line, &line_sz, stdin)) > 0) {
     EVP_DigestInit(ctx, md);
-    EVP_DigestUpdate(ctx, line, line_sz);
+    EVP_DigestUpdate(ctx, line, line_read-1);
     EVP_DigestFinal(ctx, hash, NULL);
     r = hexline(hexed, sizeof(hexed), hash, hashlen);
+    hexed[r-1] = '\t';
     fwrite(hexed, 1, r, stdout);
+    fwrite(line, 1, line_read, stdout);
   }
 
   return 0;
