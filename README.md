@@ -21,8 +21,7 @@ Usage: `hashln ALGO STRING`, `hashln < FILE`, or `COMMAND | hashln`
 `dgstmv` - Name (or rename) a file based on its hash. Useful for malware
 samples and disk images.
 
-Usage: - `dgstmv ALGO SRC_FILE DST_FILE_TEMPLATE`, `dgstmv ALGO
-DST_FILE_TEMPLATE < FILE`, or `COMMAND | dgstmv ALGO DST_FILE_TEMPLATE`
+Usage: - `dgstmv DIGEST SOURCE TEMPLATE`, `dgstmv DIGEST TEMPLATE < SOURCE`, or `COMMAND | dgstmv DIGEST TEMPLATE`
 
 Templates:
 
