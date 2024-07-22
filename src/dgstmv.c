@@ -96,11 +96,32 @@ static int fill_template(char *d, size_t n, const char *template, const uint8_t 
   return -1;
 }
 
+static void list_digests() {
+  struct digest_list *md = get_digest_list();
+  if (md == NULL) {
+    fprintf(stderr, "Run `openssl list -digest-algorithms` for supported values.\n");
+  } else {
+    char errbuf[1024];
+    size_t n = sizeof(errbuf);
+    char *d = errbuf;
+    bnstrcpy(&d, &n, "Supported values: ");
+    while (md != NULL) {
+      bnstrcpy(&d, &n, md->name);
+      if (md->next != NULL) bnmemcpy(&d, &n, ", ", 2);
+      md = md->next;
+    }
+    fprintf(stderr, "%s\n", errbuf);
+  }
+}
+
 int main(int argc, char *argv[]) {
   uint8_t buf[1<<17], *hash;
   int i_fd = 0, o_fd = 1;
 
-  if (argc < 3 || argc > 4) {
+  if (argc == 2 && strcmp(argv[1], "list") == 0) {
+    list_digests();
+    return 0;
+  } else if (argc < 3 || argc > 4) {
     fprintf(stderr, "Usage: %s DIGEST [SOURCE] TEMPLATE\n", argv[0]);
     return -1;
   }
@@ -120,21 +141,6 @@ int main(int argc, char *argv[]) {
   const EVP_MD *md = EVP_get_digestbyname(digest_name);
   if (md == NULL) {
     fprintf(stderr, "Unknown hash '%s'!\n", digest_name);
-    struct digest_list *md = get_digest_list();
-    if (md == NULL) {
-      fprintf(stderr, "Run `openssl list -digest-algorithms` for supported values.\n");
-    } else {
-      char errbuf[1024];
-      size_t n = sizeof(errbuf);
-      char *d = errbuf;
-      bnstrcpy(&d, &n, "Supported values: ");
-      while (md != NULL) {
-        bnstrcpy(&d, &n, md->name);
-        if (md->next != NULL) bnmemcpy(&d, &n, ", ", 2);
-        md = md->next;
-      }
-      fprintf(stderr, "%s\n", errbuf);
-    }
     return -1;
   }
 
