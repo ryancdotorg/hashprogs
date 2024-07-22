@@ -117,6 +117,7 @@ static void list_digests() {
 int main(int argc, char *argv[]) {
   uint8_t buf[1<<17], *hash;
   int i_fd = 0, o_fd = 1;
+  int use_tmp = 0;
 
   if (argc == 2 && strcmp(argv[1], "list") == 0) {
     list_digests();
@@ -128,7 +129,7 @@ int main(int argc, char *argv[]) {
 
   char tmpfile[PATH_MAX+1], destination[PATH_MAX+1];
   const char *digest_name = argv[1];
-  char *template, *source = NULL;
+  char *template = NULL, *source = NULL;
 
   if (argc == 3) {
     template = argv[2];
@@ -165,7 +166,24 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  if (source == NULL) {
+  if (source != NULL) {
+    if ((i_fd = open(source, O_RDONLY)) < 0) {
+      perror("open");
+      return -1;
+    }
+
+    struct stat st[] = {0};
+    if (fstat(i_fd, st) < 0) {
+      perror("stat");
+      return -1;
+    } else if (!S_ISREG(st->st_mode)) {
+      use_tmp = 1;
+    }
+  } else {
+    use_tmp = 1;
+  }
+
+  if (use_tmp) {
     char *dir, *parent;
 
     if ((dir = strdup(destination)) == NULL) {
@@ -186,9 +204,6 @@ int main(int argc, char *argv[]) {
     }
 
     free(dir);
-  } else if ((i_fd = open(source, O_RDONLY)) < 0) {
-    perror("open");
-    return -1;
   }
 
   size_t size = 0;
@@ -240,24 +255,22 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  {
-    if (source == NULL) {
-      // This is... asinine. https://stackoverflow.com/a/67568568/370695
-      mode_t mask = umask(0777);
-      umask(mask);
-      fchmod(o_fd, 0666 ^ mask);
-      // XXX: Can't use AT_EMPTY_PATH unless we're root.
-      snprintf(tmpfile, PATH_MAX, "/proc/self/fd/%d", o_fd);
-      if (linkat(AT_FDCWD, tmpfile, AT_FDCWD, destination, AT_SYMLINK_FOLLOW) != 0) {
-        perror("linkat");
-        return -1;
-      }
-    } else if (rename(source, destination) != 0) {
-      fprintf(stderr, "src: %s\n", source);
-      fprintf(stderr, "dst: %s\n", destination);
-      perror("rename");
+  if (use_tmp) {
+    // This is... asinine. https://stackoverflow.com/a/67568568/370695
+    mode_t mask = umask(0777);
+    umask(mask);
+    fchmod(o_fd, 0666 ^ mask);
+    // XXX: Can't use AT_EMPTY_PATH unless we're root.
+    snprintf(tmpfile, PATH_MAX, "/proc/self/fd/%d", o_fd);
+    if (linkat(AT_FDCWD, tmpfile, AT_FDCWD, destination, AT_SYMLINK_FOLLOW) != 0) {
+      perror("linkat");
       return -1;
     }
+  } else if (rename(source, destination) != 0) {
+    fprintf(stderr, "src: %s\n", source);
+    fprintf(stderr, "dst: %s\n", destination);
+    perror("rename");
+    return -1;
   }
 
   return 0;
